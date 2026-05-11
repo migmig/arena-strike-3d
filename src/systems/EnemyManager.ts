@@ -42,6 +42,9 @@ export class EnemyManager {
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       const e = this.enemies[i];
       if (!e) continue;
+      const dx = e.position.x - playerPos.x;
+      const dz = e.position.z - playerPos.z;
+      e.applyLOD(dx * dx + dz * dz);
       damageToPlayer += e.update(deltaTime, playerPos, now, obstacles, projectiles);
       if (e.isDead) {
         e.destroy(fragments);
