@@ -10,6 +10,7 @@ import {
 import type { EnemyKind } from '@systems/ScoreSystem';
 import type { Damageable } from '@systems/Health';
 import type { HittableTarget } from '@systems/WeaponSystem';
+import type { ProjectileSystem } from '@systems/ProjectileSystem';
 
 export type EnemyState = 'SPAWN' | 'CHASE' | 'ATTACK' | 'STUN' | 'DIE';
 
@@ -26,6 +27,7 @@ export interface EnemySpec {
 
 const ENEMY_HEIGHT = 1.6;
 const ENEMY_HALF = 0.4;
+const AVOID_RADIUS = 1.6;
 
 export class Enemy implements Damageable, HittableTarget {
   hp: number;
@@ -41,6 +43,9 @@ export class Enemy implements Damageable, HittableTarget {
 
   private hitBox = new Box3();
   private dir = new Vector3();
+  private avoid = new Vector3();
+  private tmpBox = new Box3();
+  private tmpVec = new Vector3();
 
   constructor(
     public spec: EnemySpec,
@@ -79,8 +84,31 @@ export class Enemy implements Damageable, HittableTarget {
     };
   }
 
-  /** returns attack damage if attacking this frame, else 0 */
-  update(deltaTime: number, playerPos: Vector3, now: number): number {
+  private computeAvoid(obstacles: Box3[]): Vector3 {
+    this.avoid.set(0, 0, 0);
+    for (const box of obstacles) {
+      box.getCenter(this.tmpVec);
+      const dx = this.position.x - this.tmpVec.x;
+      const dz = this.position.z - this.tmpVec.z;
+      this.tmpBox.copy(box).expandByScalar(AVOID_RADIUS);
+      if (this.tmpBox.containsPoint(this.position)) {
+        const dist = Math.hypot(dx, dz) || 0.001;
+        const strength = (AVOID_RADIUS + 1) / dist;
+        this.avoid.x += (dx / dist) * strength;
+        this.avoid.z += (dz / dist) * strength;
+      }
+    }
+    return this.avoid;
+  }
+
+  /** returns melee damage if attacking this frame, else 0. Shooter fires via projectiles. */
+  update(
+    deltaTime: number,
+    playerPos: Vector3,
+    now: number,
+    obstacles: Box3[],
+    projectiles: ProjectileSystem,
+  ): number {
     if (this.isDead) return 0;
     if (this.state === 'STUN' && now < this.stunUntil) return 0;
     if (this.state === 'STUN') this.state = 'CHASE';
@@ -92,11 +120,38 @@ export class Enemy implements Damageable, HittableTarget {
     if (distance < 0.001) return 0;
     this.dir.normalize();
 
-    if (distance > this.spec.attackRange) {
+    const avoid = this.computeAvoid(obstacles);
+    if (avoid.lengthSq() > 0) {
+      this.dir.x += avoid.x * 0.8;
+      this.dir.z += avoid.z * 0.8;
+      this.dir.normalize();
+    }
+
+    const inAttackRange = distance <= this.spec.attackRange;
+
+    if (this.kind === 'shooter') {
+      const preferredDist = 10;
+      if (distance > preferredDist + 1) {
+        this.move(deltaTime);
+      } else if (distance < preferredDist - 1) {
+        this.position.x -= this.dir.x * this.spec.moveSpeed * deltaTime;
+        this.position.z -= this.dir.z * this.spec.moveSpeed * deltaTime;
+      }
+      this.mesh.lookAt(playerPos.x, this.position.y, playerPos.z);
+      if (
+        inAttackRange &&
+        now - this.lastAttackAt >= this.spec.attackCooldownMs
+      ) {
+        this.lastAttackAt = now;
+        projectiles.spawn(this.position.clone(), playerPos, this.spec.attackDamage);
+        this.state = 'ATTACK';
+      }
+      return 0;
+    }
+
+    if (!inAttackRange) {
       this.state = 'CHASE';
-      const step = this.spec.moveSpeed * deltaTime;
-      this.position.x += this.dir.x * step;
-      this.position.z += this.dir.z * step;
+      this.move(deltaTime);
       this.mesh.lookAt(playerPos.x, this.position.y, playerPos.z);
       return 0;
     }
@@ -111,6 +166,12 @@ export class Enemy implements Damageable, HittableTarget {
       return this.spec.attackDamage;
     }
     return 0;
+  }
+
+  private move(deltaTime: number): void {
+    const step = this.spec.moveSpeed * deltaTime;
+    this.position.x += this.dir.x * step;
+    this.position.z += this.dir.z * step;
   }
 
   destroy(scene: Scene): void {

@@ -44,16 +44,16 @@ export class WaveSystem {
     private camera: PerspectiveCamera,
     private difficulty: DifficultyPreset = DIFFICULTIES[1] as DifficultyPreset,
     private intermissionMs = 5000,
+    spawnRingRadius = 22,
   ) {
-    this.spawnPoints = this.buildSpawnRing();
+    this.spawnPoints = this.buildSpawnRing(spawnRingRadius);
   }
 
-  private buildSpawnRing(): Vector3[] {
+  private buildSpawnRing(radius: number): Vector3[] {
     const points: Vector3[] = [];
-    const ring = 12;
     for (let i = 0; i < 16; i++) {
       const a = (i / 16) * Math.PI * 2;
-      points.push(new Vector3(Math.cos(a) * ring, 0, Math.sin(a) * ring));
+      points.push(new Vector3(Math.cos(a) * radius, 0, Math.sin(a) * radius));
     }
     return points;
   }

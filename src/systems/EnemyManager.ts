@@ -1,8 +1,9 @@
-import { Scene, Vector3 } from 'three';
+import { Scene, Vector3, Box3 } from 'three';
 import enemyData from '@data/enemies.json';
 import { Enemy, type EnemySpec } from '@entities/Enemy';
 import type { RNG } from '@utils/rng';
 import type { EnemyKind } from './ScoreSystem';
+import type { ProjectileSystem } from './ProjectileSystem';
 
 const SPECS = enemyData as EnemySpec[];
 
@@ -28,12 +29,18 @@ export class EnemyManager {
     return this.spawn(kind, new Vector3(x, 0, z), now);
   }
 
-  update(deltaTime: number, playerPos: Vector3, now: number): number {
+  update(
+    deltaTime: number,
+    playerPos: Vector3,
+    now: number,
+    obstacles: Box3[],
+    projectiles: ProjectileSystem,
+  ): number {
     let damageToPlayer = 0;
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       const e = this.enemies[i];
       if (!e) continue;
-      damageToPlayer += e.update(deltaTime, playerPos, now);
+      damageToPlayer += e.update(deltaTime, playerPos, now, obstacles, projectiles);
       if (e.isDead) {
         e.destroy(this.scene);
         this.enemies.splice(i, 1);

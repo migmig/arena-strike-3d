@@ -1,4 +1,4 @@
-import { Vector3 } from 'three';
+import { Box3, Vector3 } from 'three';
 import { Renderer } from '@managers/Renderer';
 import { Physics } from '@managers/Physics';
 import { InputManager } from '@managers/InputManager';
@@ -7,7 +7,8 @@ import { CameraController } from '@managers/CameraController';
 import { CameraShake } from '@managers/CameraShake';
 import { StateMachine } from './StateMachine';
 import { EventBus } from './EventBus';
-import { buildArena } from '@entities/Arena';
+import { buildArena, ARENA_HALF } from '@entities/Arena';
+import { ProjectileSystem } from '@systems/ProjectileSystem';
 import { attachDebug } from '@utils/debug';
 import { RNG } from '@utils/rng';
 import { WeaponSystem } from '@systems/WeaponSystem';
@@ -62,6 +63,8 @@ export class Game {
   waves!: WaveSystem;
   boss: Boss | null = null;
   particles!: HitParticles;
+  projectiles!: ProjectileSystem;
+  obstacles: Box3[] = [];
 
   hud!: HUD;
   perkUi!: PerkSelect;
@@ -98,14 +101,16 @@ export class Game {
     await this.physics.init();
     this.input.attach(document.body);
 
-    buildArena(this.renderer.scene, this.physics.world);
+    const arena = buildArena(this.renderer.scene, this.physics.world);
+    this.obstacles = arena.obstacles;
     this.player = new Player(this.physics.world, this.renderer.scene);
     this.weapons = new WeaponSystem(this.renderer.scene, this.renderer.camera, this.rng);
     this.enemies = new EnemyManager(this.renderer.scene, this.rng);
     this.pickups = new PickupSystem(this.renderer.scene, this.rng);
-    this.waves = new WaveSystem(this.enemies, this.rng, this.renderer.camera);
+    this.waves = new WaveSystem(this.enemies, this.rng, this.renderer.camera, undefined, undefined, ARENA_HALF - 3);
     this.waves.setDifficulty(this.save.options.difficulty);
     this.particles = new HitParticles(this.renderer.scene);
+    this.projectiles = new ProjectileSystem(this.renderer.scene);
 
     this.hud = new HUD(this.hudParent);
     this.perkUi = new PerkSelect(this.hudParent);
@@ -209,13 +214,26 @@ export class Game {
       }
       if (this.weapons.active.reloadingUntil > 0) this.onboarding.trigger('reload');
 
-      const enemyDamage = this.enemies.update(deltaTime, this.player.position, now);
+      const enemyDamage = this.enemies.update(
+        deltaTime,
+        this.player.position,
+        now,
+        this.obstacles,
+        this.projectiles,
+      );
+      const projectileDamage = this.projectiles.update(
+        deltaTime,
+        now,
+        this.player.position,
+        this.obstacles,
+      );
       let bossDamage = 0;
       if (this.boss) {
         bossDamage = this.boss.update(deltaTime, this.player.position, now, this.enemies);
         if (this.boss.isDead) this.boss = null;
       }
-      const totalDmg = (enemyDamage + bossDamage) * (1 - this.perks.mods.damageReduction);
+      const totalDmg =
+        (enemyDamage + bossDamage + projectileDamage) * (1 - this.perks.mods.damageReduction);
       if (totalDmg > 0) {
         this.stats.currentHealth = Math.max(0, this.stats.currentHealth - totalDmg);
         this.score.onPlayerHit();

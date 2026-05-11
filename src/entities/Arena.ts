@@ -8,34 +8,47 @@ import {
   InstancedMesh,
   Matrix4,
   Object3D,
+  Box3,
+  Vector3,
 } from 'three';
 import RAPIER from '@dimforge/rapier3d-compat';
 
 interface Cover {
   x: number;
   z: number;
-  size: number;
+  w: number;
+  h: number;
+  d: number;
 }
 
 const COVERS: Cover[] = [
-  { x: -8, z: -6, size: 2 },
-  { x: 7, z: -7, size: 2 },
-  { x: -5, z: 8, size: 2 },
-  { x: 9, z: 5, size: 2 },
-  { x: 0, z: 0, size: 1.5 },
-  { x: -10, z: 2, size: 2 },
-  { x: 4, z: -3, size: 1.8 },
+  { x: -14, z: -10, w: 3, h: 2, d: 3 },
+  { x: 14, z: -12, w: 3, h: 2.5, d: 3 },
+  { x: -8, z: 14, w: 2.5, h: 2, d: 4 },
+  { x: 16, z: 8, w: 3, h: 2, d: 2 },
+  { x: 0, z: 0, w: 2, h: 1.5, d: 2 },
+  { x: -18, z: 4, w: 2, h: 3, d: 2 },
+  { x: 6, z: -5, w: 1.5, h: 2, d: 5 },
+  { x: -5, z: -16, w: 4, h: 2, d: 1.5 },
+  { x: 10, z: 18, w: 3, h: 2.5, d: 1.5 },
+  { x: -16, z: -18, w: 2.5, h: 2, d: 2.5 },
+  { x: 18, z: -18, w: 2.5, h: 2, d: 2.5 },
+  { x: -2, z: 8, w: 1.5, h: 1.2, d: 3 },
 ];
 
-const ARENA_HALF = 15;
+export const ARENA_HALF = 25;
 
-export function buildArena(scene: Scene, world: RAPIER.World): void {
+export interface ArenaResult {
+  obstacles: Box3[];
+}
+
+export function buildArena(scene: Scene, world: RAPIER.World): ArenaResult {
   const groundMat = new MeshStandardMaterial({ color: 0x2a2a35, roughness: 0.9 });
   const ground = new Mesh(new PlaneGeometry(ARENA_HALF * 2, ARENA_HALF * 2), groundMat);
   ground.rotation.x = -Math.PI / 2;
   scene.add(ground);
 
-  const grid = new GridHelper(ARENA_HALF * 2, 30, 0x4a4a55, 0x3a3a45);
+  const grid = new GridHelper(ARENA_HALF * 2, 50, 0x4a4a55, 0x3a3a45);
   scene.add(grid);
 
   world.createCollider(
@@ -60,21 +73,26 @@ export function buildArena(scene: Scene, world: RAPIER.World): void {
   const instanced = new InstancedMesh(coverGeom, coverMat, COVERS.length);
   const dummy = new Object3D();
   const matrix = new Matrix4();
+  const obstacles: Box3[] = [];
   for (let i = 0; i < COVERS.length; i++) {
     const c = COVERS[i] as Cover;
-    dummy.position.set(c.x, c.size / 2, c.z);
-    dummy.scale.set(c.size, c.size, c.size);
+    dummy.position.set(c.x, c.h / 2, c.z);
+    dummy.scale.set(c.w, c.h, c.d);
     dummy.updateMatrix();
     matrix.copy(dummy.matrix);
     instanced.setMatrixAt(i, matrix);
     world.createCollider(
-      RAPIER.ColliderDesc.cuboid(c.size / 2, c.size / 2, c.size / 2).setTranslation(
-        c.x,
-        c.size / 2,
-        c.z,
+      RAPIER.ColliderDesc.cuboid(c.w / 2, c.h / 2, c.d / 2).setTranslation(c.x, c.h / 2, c.z),
+    );
+    obstacles.push(
+      new Box3(
+        new Vector3(c.x - c.w / 2, 0, c.z - c.d / 2),
+        new Vector3(c.x + c.w / 2, c.h, c.z + c.d / 2),
       ),
     );
   }
   instanced.instanceMatrix.needsUpdate = true;
   scene.add(instanced);
+
+  return { obstacles };
 }
