@@ -1,0 +1,6 @@
+[
+  { "id": "easy", "label": "Easy", "hpMul": 0.75, "dmgMul": 0.75, "countMul": 0.8, "pickupMul": 1.25 },
+  { "id": "normal", "label": "Normal", "hpMul": 1.0, "dmgMul": 1.0, "countMul": 1.0, "pickupMul": 1.0 },
+  { "id": "hard", "label": "Hard", "hpMul": 1.25, "dmgMul": 1.25, "countMul": 1.2, "pickupMul": 0.85 },
+  { "id": "nightmare", "label": "Nightmare", "hpMul": 1.5, "dmgMul": 1.5, "countMul": 1.5, "pickupMul": 0.7 }
+]

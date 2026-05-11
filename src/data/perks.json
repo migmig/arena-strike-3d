@@ -1,0 +1,14 @@
+[
+  { "id": "move_speed", "name": "Swift Strides", "desc": "Move speed +10%", "icon": "shoe" },
+  { "id": "reload_speed", "name": "Quick Hands", "desc": "Reload speed +25%", "icon": "hand" },
+  { "id": "crit_chance", "name": "Sharpshooter", "desc": "Crit chance +15%", "icon": "scope" },
+  { "id": "max_health", "name": "Iron Skin", "desc": "Max HP +25", "icon": "heart" },
+  { "id": "dash_cooldown", "name": "Wind Walker", "desc": "Dash cooldown -1s", "icon": "wind" },
+  { "id": "damage_up", "name": "Heavy Rounds", "desc": "All damage +15%", "icon": "bullet" },
+  { "id": "headshot_bonus", "name": "Precision", "desc": "Headshot damage +50%", "icon": "target" },
+  { "id": "ammo_capacity", "name": "Extended Mags", "desc": "Mag size +25%", "icon": "mag" },
+  { "id": "lifesteal", "name": "Vampire", "desc": "Heal 2 HP per kill", "icon": "drop" },
+  { "id": "explosive", "name": "Frag Tips", "desc": "Kills deal 30 splash damage", "icon": "explode" },
+  { "id": "fire_rate", "name": "Trigger Finger", "desc": "Fire rate +15%", "icon": "lightning" },
+  { "id": "shield", "name": "Bulwark", "desc": "Take 10% less damage", "icon": "shield" }
+]

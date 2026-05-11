@@ -1,0 +1,7 @@
+[
+  { "wave": 1, "composition": { "grunt": 5 }, "spawnIntervalMs": 1200 },
+  { "wave": 2, "composition": { "grunt": 6, "shooter": 2 }, "spawnIntervalMs": 1000 },
+  { "wave": 3, "composition": { "grunt": 7, "shooter": 3, "charger": 1 }, "spawnIntervalMs": 900 },
+  { "wave": 4, "composition": { "grunt": 8, "shooter": 4, "charger": 3 }, "spawnIntervalMs": 800 },
+  { "wave": 5, "composition": { "boss": 1 }, "spawnIntervalMs": 1000, "isBoss": true }
+]
