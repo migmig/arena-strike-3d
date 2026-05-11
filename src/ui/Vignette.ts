@@ -16,9 +16,11 @@ export class Vignette {
         }
         #vignette-low {
           box-shadow: inset 0 0 240px 80px rgba(255,40,40,0.55);
-          animation: pulse 1.2s infinite alternate;
         }
-        @keyframes pulse {
+        #vignette-low.active {
+          animation: vignette-pulse 1.2s infinite alternate;
+        }
+        @keyframes vignette-pulse {
           from { opacity: 0.35; }
           to { opacity: 0.75; }
         }
@@ -40,7 +42,7 @@ export class Vignette {
   setHpRatio(ratio: number): void {
     this.hpRatio = ratio;
     const low = this.root.querySelector('#vignette-low') as HTMLDivElement;
-    low.style.opacity = ratio < 0.3 ? '1' : '0';
+    low.classList.toggle('active', ratio < 0.3);
   }
 
   update(deltaMs: number): void {
