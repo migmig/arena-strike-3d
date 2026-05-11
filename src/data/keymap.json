@@ -1,0 +1,18 @@
+{
+  "MOVE_FWD": [{ "device": "kbd", "code": "KeyW" }],
+  "MOVE_BACK": [{ "device": "kbd", "code": "KeyS" }],
+  "STRAFE_L": [{ "device": "kbd", "code": "KeyA" }],
+  "STRAFE_R": [{ "device": "kbd", "code": "KeyD" }],
+  "JUMP": [{ "device": "kbd", "code": "Space" }],
+  "DASH": [{ "device": "kbd", "code": "ShiftLeft" }],
+  "FIRE": [{ "device": "mouse", "code": "0" }],
+  "ADS": [{ "device": "mouse", "code": "2" }],
+  "RELOAD": [{ "device": "kbd", "code": "KeyR" }],
+  "WEAPON_1": [{ "device": "kbd", "code": "Digit1" }],
+  "WEAPON_2": [{ "device": "kbd", "code": "Digit2" }],
+  "WEAPON_3": [{ "device": "kbd", "code": "Digit3" }],
+  "WEAPON_PREV": [{ "device": "kbd", "code": "KeyQ" }],
+  "INTERACT": [{ "device": "kbd", "code": "KeyF" }],
+  "TOGGLE_CAMERA": [{ "device": "kbd", "code": "KeyV" }],
+  "PAUSE": [{ "device": "kbd", "code": "Escape" }]
+}
