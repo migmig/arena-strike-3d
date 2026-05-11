@@ -38,6 +38,7 @@ export class Enemy implements Damageable, HittableTarget {
   private hitBox = new Box3();
   private dir = new Vector3();
   private avoid = new Vector3();
+  private lodLevel = 0;
   private tmpBox = new Box3();
   private tmpVec = new Vector3();
   private baseColor: number;
@@ -103,7 +104,19 @@ export class Enemy implements Damageable, HittableTarget {
   }
 
   private animate(deltaTime: number, now: number, moving: boolean): void {
-    this.bobPhase += deltaTime * (moving ? 6 : 2);
+    if (this.lodLevel === 2) {
+      this.visual.bobTarget.position.y = 0;
+      this.visual.bobTarget.scale.setScalar(1);
+      this.visual.light.intensity = 0;
+      if (now < this.hitFlashUntil) {
+        for (const m of this.visual.bodyMaterials) m.emissiveIntensity = 1.6;
+      } else {
+        for (const m of this.visual.bodyMaterials) m.emissiveIntensity = 0.35;
+      }
+      return;
+    }
+    const bobRate = this.lodLevel === 1 ? 0.5 : 1;
+    this.bobPhase += deltaTime * (moving ? 6 : 2) * bobRate;
     const bobAmp = moving ? 0.08 : 0.04;
     this.visual.bobTarget.position.y = Math.sin(this.bobPhase) * bobAmp;
     const scalePulse = 1 + Math.sin(this.bobPhase * 0.5) * 0.02;
@@ -118,6 +131,15 @@ export class Enemy implements Damageable, HittableTarget {
     } else {
       for (const m of this.visual.bodyMaterials) m.emissiveIntensity = 0.35;
     }
+  }
+
+  applyLOD(distSq: number): void {
+    let level = 0;
+    if (distSq > 40 * 40) level = 2;
+    else if (distSq > 22 * 22) level = 1;
+    if (level === this.lodLevel) return;
+    this.lodLevel = level;
+    this.visual.light.visible = level < 2;
   }
 
   update(

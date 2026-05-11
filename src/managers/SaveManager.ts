@@ -1,3 +1,5 @@
+import type { KeyMap } from './InputManager';
+
 export type Difficulty = 'easy' | 'normal' | 'hard' | 'nightmare';
 
 export interface ScoreEntry {
@@ -29,6 +31,7 @@ export interface SaveData {
   highScores: Record<Difficulty, ScoreEntry[]>;
   stats: { totalKills: number; totalPlayTimeMs: number; sessions: number };
   flags: { tutorialSeen: boolean; telemetryConsent: boolean | null };
+  keymap?: Partial<KeyMap>;
 }
 
 const STORAGE_KEY = 'arena-strike-save';
@@ -81,6 +84,7 @@ export class SaveManager {
       highScores: { ...DEFAULT_SAVE.highScores, ...(d.highScores ?? {}) },
       stats: { ...DEFAULT_SAVE.stats, ...(d.stats ?? {}) },
       flags: { ...DEFAULT_SAVE.flags, ...(d.flags ?? {}) },
+      ...(d.keymap ? { keymap: d.keymap } : {}),
     };
   }
 
@@ -136,6 +140,15 @@ export class SaveManager {
 
   setTelemetryConsent(consent: boolean): void {
     this.data.flags.telemetryConsent = consent;
+    this.save();
+  }
+
+  get keymap(): Partial<KeyMap> | undefined {
+    return this.data.keymap;
+  }
+
+  setKeymap(map: Partial<KeyMap>): void {
+    this.data.keymap = map;
     this.save();
   }
 }

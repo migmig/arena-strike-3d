@@ -25,6 +25,33 @@ export interface Binding {
 
 export type KeyMap = Record<Action, Binding[]>;
 
+export const ALL_ACTIONS: readonly Action[] = [
+  'MOVE_FWD',
+  'MOVE_BACK',
+  'STRAFE_L',
+  'STRAFE_R',
+  'JUMP',
+  'DASH',
+  'FIRE',
+  'ADS',
+  'RELOAD',
+  'WEAPON_1',
+  'WEAPON_2',
+  'WEAPON_3',
+  'WEAPON_PREV',
+  'INTERACT',
+  'TOGGLE_CAMERA',
+  'PAUSE',
+] as const;
+
+export function describeBinding(b: Binding): string {
+  if (b.device === 'mouse') {
+    const labels: Record<string, string> = { '0': 'Mouse L', '1': 'Mouse M', '2': 'Mouse R' };
+    return labels[b.code] ?? `Mouse ${b.code}`;
+  }
+  return b.code.replace(/^Key/, '').replace(/^Digit/, '').replace(/^Arrow/, '↑/↓ ');
+}
+
 export class InputManager {
   private keys = new Set<string>();
   private mouseButtons = new Set<number>();
@@ -37,8 +64,9 @@ export class InputManager {
   mouseDeltaY = 0;
   pointerLocked = false;
 
-  private keymap: KeyMap = defaultKeymap as KeyMap;
+  private keymap: KeyMap = structuredClone(defaultKeymap) as KeyMap;
   private target: HTMLElement | null = null;
+  private captureResolver: ((b: Binding | null) => void) | null = null;
 
   attach(target: HTMLElement): void {
     this.target = target;
@@ -64,6 +92,19 @@ export class InputManager {
   }
 
   private onKeyDown = (e: KeyboardEvent): void => {
+    if (this.captureResolver) {
+      if (e.code === 'Escape') {
+        const r = this.captureResolver;
+        this.captureResolver = null;
+        r(null);
+      } else {
+        const r = this.captureResolver;
+        this.captureResolver = null;
+        r({ device: 'kbd', code: e.code });
+      }
+      e.preventDefault();
+      return;
+    }
     if (!this.keys.has(e.code)) this.triggeredKeys.add(e.code);
     this.keys.add(e.code);
   };
@@ -71,6 +112,12 @@ export class InputManager {
     this.keys.delete(e.code);
   };
   private onMouseDown = (e: MouseEvent): void => {
+    if (this.captureResolver) {
+      const r = this.captureResolver;
+      this.captureResolver = null;
+      r({ device: 'mouse', code: String(e.button) });
+      return;
+    }
     if (!this.mouseButtons.has(e.button)) this.triggeredMouse.add(e.button);
     this.mouseButtons.add(e.button);
   };
@@ -111,5 +158,33 @@ export class InputManager {
     this.prevMouse = new Set(this.mouseButtons);
     this.triggeredKeys.clear();
     this.triggeredMouse.clear();
+  }
+
+  getKeymap(): KeyMap {
+    return structuredClone(this.keymap);
+  }
+
+  loadKeymap(map: Partial<KeyMap>): void {
+    for (const a of ALL_ACTIONS) {
+      const incoming = map[a];
+      if (incoming && incoming.length > 0) this.keymap[a] = incoming;
+    }
+  }
+
+  setBinding(action: Action, binding: Binding): void {
+    this.keymap[action] = [binding];
+  }
+
+  resetKeymap(): void {
+    this.keymap = structuredClone(defaultKeymap) as KeyMap;
+  }
+
+  captureNextBinding(): Promise<Binding | null> {
+    if (this.captureResolver) {
+      this.captureResolver(null);
+    }
+    return new Promise((resolve) => {
+      this.captureResolver = resolve;
+    });
   }
 }

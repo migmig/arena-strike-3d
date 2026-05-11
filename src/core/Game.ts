@@ -33,6 +33,8 @@ import { DamageNumbers } from '@ui/DamageNumbers';
 import { Vignette } from '@ui/Vignette';
 import { EnemyHpBars } from '@ui/EnemyHpBars';
 import { Minimap } from '@ui/Minimap';
+import { SettingsMenu } from '@ui/SettingsMenu';
+import { Credits } from '@ui/Credits';
 
 export interface GameEvents {
   stateChange: { from: string; to: string };
@@ -79,6 +81,8 @@ export class Game {
   vignette!: Vignette;
   enemyHpBars!: EnemyHpBars;
   minimap!: Minimap;
+  settings!: SettingsMenu;
+  credits!: Credits;
 
   private lastTime = 0;
   private running = false;
@@ -128,6 +132,22 @@ export class Game {
     this.vignette = new Vignette(this.hudParent);
     this.enemyHpBars = new EnemyHpBars(this.hudParent, this.renderer.camera);
     this.minimap = new Minimap(this.hudParent, ARENA_HALF);
+    this.credits = new Credits(this.hudParent, () => {});
+    this.settings = new SettingsMenu(this.hudParent, this.save, this.input, {
+      onClose: () => {
+        if (this.state.is('PAUSED')) {
+          this.pauseOverlay.show('Paused', 'Press Esc again to resume.', [
+            { label: 'Resume', onClick: () => this.togglePause() },
+            { label: 'Settings', onClick: () => this.openSettings() },
+          ]);
+        }
+      },
+      onOptionsChange: () => this.applyOptionsFromSave(),
+      onOpenCredits: () => this.credits.open(),
+    });
+
+    const savedKeymap = this.save.keymap;
+    if (savedKeymap) this.input.loadKeymap(savedKeymap);
 
     this.applyOptionsFromSave();
     this.renderer.onContextLostCallback = () => this.state.transition('PAUSED');
@@ -173,13 +193,20 @@ export class Game {
       this.state.transition('PAUSED');
       this.pauseOverlay.show('Paused', 'Press Esc again to resume.', [
         { label: 'Resume', onClick: () => this.togglePause() },
+        { label: 'Settings', onClick: () => this.openSettings() },
       ]);
       document.exitPointerLock();
     } else if (this.state.is('PAUSED')) {
+      if (this.settings.isOpen() || this.credits.isOpen()) return;
       this.pauseOverlay.hide();
       this.input.requestPointerLock();
       this.state.transition('PLAYING');
     }
+  }
+
+  openSettings(): void {
+    this.pauseOverlay.hide();
+    this.settings.open();
   }
 
   private loop = (now: number): void => {
