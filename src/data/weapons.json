@@ -1,0 +1,43 @@
+[
+  {
+    "id": "pistol",
+    "name": "Pistol",
+    "damage": 20,
+    "fireRateMs": 280,
+    "magSize": 12,
+    "reloadMs": 900,
+    "spread": 0.01,
+    "pellets": 1,
+    "autoFire": false,
+    "range": 80,
+    "unlimitedReserve": true
+  },
+  {
+    "id": "smg",
+    "name": "SMG",
+    "damage": 12,
+    "fireRateMs": 90,
+    "magSize": 30,
+    "reloadMs": 1500,
+    "spread": 0.035,
+    "pellets": 1,
+    "autoFire": true,
+    "range": 60,
+    "unlimitedReserve": false,
+    "reserveStart": 90
+  },
+  {
+    "id": "shotgun",
+    "name": "Shotgun",
+    "damage": 8,
+    "fireRateMs": 700,
+    "magSize": 6,
+    "reloadMs": 2200,
+    "spread": 0.08,
+    "pellets": 6,
+    "autoFire": false,
+    "range": 30,
+    "unlimitedReserve": false,
+    "reserveStart": 24
+  }
+]

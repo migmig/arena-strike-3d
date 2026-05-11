@@ -1,0 +1,42 @@
+[
+  {
+    "id": "grunt",
+    "hp": 50,
+    "moveSpeed": 3.5,
+    "attackDamage": 12,
+    "attackRange": 1.8,
+    "attackCooldownMs": 900,
+    "scoreValue": 100,
+    "color": "0xd05050"
+  },
+  {
+    "id": "shooter",
+    "hp": 80,
+    "moveSpeed": 2.5,
+    "attackDamage": 8,
+    "attackRange": 14,
+    "attackCooldownMs": 1300,
+    "scoreValue": 150,
+    "color": "0xd0b050"
+  },
+  {
+    "id": "charger",
+    "hp": 150,
+    "moveSpeed": 5.0,
+    "attackDamage": 35,
+    "attackRange": 1.4,
+    "attackCooldownMs": 600,
+    "scoreValue": 250,
+    "color": "0xa050d0"
+  },
+  {
+    "id": "boss",
+    "hp": 1500,
+    "moveSpeed": 2.0,
+    "attackDamage": 18,
+    "attackRange": 22,
+    "attackCooldownMs": 1100,
+    "scoreValue": 5000,
+    "color": "0xff3030"
+  }
+]

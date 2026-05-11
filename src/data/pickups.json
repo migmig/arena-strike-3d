@@ -1,0 +1,19 @@
+{
+  "spawnPoints": [
+    { "x": -12, "z": -12 },
+    { "x": 12, "z": -12 },
+    { "x": -12, "z": 12 },
+    { "x": 12, "z": 12 },
+    { "x": 0, "z": -12 },
+    { "x": 0, "z": 12 },
+    { "x": -12, "z": 0 },
+    { "x": 12, "z": 0 }
+  ],
+  "types": [
+    { "id": "ammo_small", "label": "Ammo+", "color": "0x4090f0", "respawnMs": 20000 },
+    { "id": "ammo_large", "label": "Ammo Max", "color": "0x2060f0", "respawnMs": 45000 },
+    { "id": "health", "label": "Heal+40", "color": "0x40e060", "respawnMs": 30000 },
+    { "id": "damage_boost", "label": "DMG x2", "color": "0xe04060", "respawnMs": 60000 },
+    { "id": "quad_speed", "label": "Speed+50%", "color": "0xf0f040", "respawnMs": 60000 }
+  ]
+}
