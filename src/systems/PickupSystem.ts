@@ -43,17 +43,24 @@ export interface ActiveBuff {
 const PICKUP_HEIGHT = 0.8;
 const PICKUP_RADIUS = 0.5;
 const TYPES = pickupData.types as PickupTypeDef[];
-const SPAWNS = pickupData.spawnPoints as ReadonlyArray<{ x: number; z: number }>;
+const SPAWNS = pickupData.spawnPoints as ReadonlyArray<{ x: number; z: number; type: PickupId }>;
+
+function typeById(id: PickupId): PickupTypeDef {
+  const found = TYPES.find((t) => t.id === id);
+  if (!found) throw new Error(`Unknown pickup type: ${id}`);
+  return found;
+}
 
 export class PickupSystem {
   private nodes: PickupNode[] = [];
 
   constructor(
     private scene: Scene,
-    private rng: RNG,
+    _rng: RNG,
   ) {
+    void _rng;
     for (const s of SPAWNS) {
-      const type = this.rng.pick(TYPES);
+      const type = typeById(s.type);
       const node = this.createNode(s.x, s.z, type);
       this.nodes.push(node);
     }
@@ -91,10 +98,6 @@ export class PickupSystem {
           pickedId = node.type.id;
         }
       } else if (now >= node.respawnAt) {
-        node.type = this.rng.pick(TYPES);
-        (node.mesh.material as MeshStandardMaterial).color.set(Number(node.type.color));
-        (node.mesh.material as MeshStandardMaterial).emissive.set(Number(node.type.color));
-        node.light.color.set(Number(node.type.color));
         node.mesh.visible = true;
         node.light.visible = true;
         node.active = true;

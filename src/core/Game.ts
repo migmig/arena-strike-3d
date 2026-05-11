@@ -268,6 +268,8 @@ export class Game {
     });
     this.lastWaveStart = now;
     this.waveDeaths = 0;
+    healPlayer(this.stats, 30);
+    this.audio.playSfx('pickup');
     const offers = this.perks.offerThree();
     if (offers.length === 0) return;
     const prev = this.state.state;
