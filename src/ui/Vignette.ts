@@ -2,6 +2,7 @@ export class Vignette {
   private root: HTMLDivElement;
   private flashTimer = 0;
   private hpRatio = 1;
+  private reduceMotion = false;
 
   constructor(parent: HTMLElement) {
     this.root = document.createElement('div');
@@ -42,7 +43,14 @@ export class Vignette {
   setHpRatio(ratio: number): void {
     this.hpRatio = ratio;
     const low = this.root.querySelector('#vignette-low') as HTMLDivElement;
-    low.classList.toggle('active', ratio < 0.3);
+    const critical = ratio < 0.3;
+    low.classList.toggle('active', critical && !this.reduceMotion);
+    low.style.opacity = critical && this.reduceMotion ? '0.55' : '';
+  }
+
+  setReduceMotion(enabled: boolean): void {
+    this.reduceMotion = enabled;
+    this.setHpRatio(this.hpRatio);
   }
 
   update(deltaMs: number): void {

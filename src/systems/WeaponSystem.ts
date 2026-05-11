@@ -4,6 +4,7 @@ import weaponData from '@data/weapons.json';
 import type { RNG } from '@utils/rng';
 import type { InputManager } from '@managers/InputManager';
 import { TracerPool } from '@entities/Tracer';
+import { MuzzleFlash } from '@entities/MuzzleFlash';
 import { applyDamage, type Damageable } from './Health';
 
 export type WeaponId = 'pistol' | 'smg' | 'shotgun';
@@ -47,6 +48,7 @@ export class WeaponSystem {
   prevIndex = 0;
 
   private tracers: TracerPool;
+  private muzzle: MuzzleFlash;
   private raycaster = new Raycaster();
   private dir = new Vector3();
 
@@ -64,6 +66,7 @@ export class WeaponSystem {
       reloadingUntil: 0,
     }));
     this.tracers = new TracerPool(scene, 24);
+    this.muzzle = new MuzzleFlash(scene, camera);
   }
 
   get active(): WeaponState {
@@ -113,6 +116,7 @@ export class WeaponSystem {
     }
     w.ammoInMag -= 1;
     w.nextFireAt = t + w.spec.fireRateMs;
+    this.muzzle.trigger(t);
 
     const results: HitResult[] = [];
     const origin = new Vector3();
@@ -174,6 +178,7 @@ export class WeaponSystem {
 
     this.finishReload();
     this.tracers.update(this.now());
+    this.muzzle.update(this.now());
 
     const w = this.active;
     const wantFire = w.spec.autoFire

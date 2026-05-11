@@ -145,4 +145,10 @@ export class PickupSystem {
     node.light.visible = false;
     node.respawnAt = now + node.type.respawnMs;
   }
+
+  get activeNodes(): ReadonlyArray<{ pos: Vector3; id: PickupId }> {
+    return this.nodes
+      .filter((n) => n.active)
+      .map((n) => ({ pos: n.pos, id: n.type.id }));
+  }
 }
