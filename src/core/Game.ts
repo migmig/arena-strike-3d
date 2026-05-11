@@ -23,6 +23,7 @@ import { SaveManager } from '@managers/SaveManager';
 import { AudioManager } from '@managers/AudioManager';
 import { Accessibility } from '@managers/Accessibility';
 import { HitParticles } from '@entities/HitParticles';
+import { DeathFragments } from '@entities/DeathFragments';
 import { TelemetrySystem } from '@systems/Telemetry';
 import { HUD } from '@ui/HUD';
 import { PerkSelect } from '@ui/PerkSelect';
@@ -30,6 +31,7 @@ import { Overlay } from '@ui/Overlay';
 import { Onboarding } from '@ui/Onboarding';
 import { DamageNumbers } from '@ui/DamageNumbers';
 import { Vignette } from '@ui/Vignette';
+import { EnemyHpBars } from '@ui/EnemyHpBars';
 
 export interface GameEvents {
   stateChange: { from: string; to: string };
@@ -64,6 +66,7 @@ export class Game {
   boss: Boss | null = null;
   particles!: HitParticles;
   projectiles!: ProjectileSystem;
+  fragments!: DeathFragments;
   obstacles: Box3[] = [];
 
   hud!: HUD;
@@ -73,6 +76,7 @@ export class Game {
   onboarding!: Onboarding;
   damageNumbers!: DamageNumbers;
   vignette!: Vignette;
+  enemyHpBars!: EnemyHpBars;
 
   private lastTime = 0;
   private running = false;
@@ -111,6 +115,7 @@ export class Game {
     this.waves.setDifficulty(this.save.options.difficulty);
     this.particles = new HitParticles(this.renderer.scene);
     this.projectiles = new ProjectileSystem(this.renderer.scene);
+    this.fragments = new DeathFragments(this.renderer.scene);
 
     this.hud = new HUD(this.hudParent);
     this.perkUi = new PerkSelect(this.hudParent);
@@ -119,6 +124,7 @@ export class Game {
     this.onboarding = new Onboarding(this.hudParent, this.save);
     this.damageNumbers = new DamageNumbers(this.hudParent, this.renderer.camera);
     this.vignette = new Vignette(this.hudParent);
+    this.enemyHpBars = new EnemyHpBars(this.hudParent, this.renderer.camera);
 
     this.applyOptionsFromSave();
     this.renderer.onContextLostCallback = () => this.state.transition('PAUSED');
@@ -220,7 +226,9 @@ export class Game {
         now,
         this.obstacles,
         this.projectiles,
+        this.fragments,
       );
+      this.fragments.update(deltaTime);
       const projectileDamage = this.projectiles.update(
         deltaTime,
         now,
@@ -270,6 +278,7 @@ export class Game {
       this.vignette.setHpRatio(this.stats.currentHealth / this.stats.maxHealth);
       this.vignette.update(deltaMs);
       this.damageNumbers.update(now, window.innerWidth, window.innerHeight);
+      this.enemyHpBars.update(this.enemies.alive, window.innerWidth, window.innerHeight);
       this.onboarding.update(now);
     }
     this.renderer.render();

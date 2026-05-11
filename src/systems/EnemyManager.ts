@@ -4,6 +4,7 @@ import { Enemy, type EnemySpec } from '@entities/Enemy';
 import type { RNG } from '@utils/rng';
 import type { EnemyKind } from './ScoreSystem';
 import type { ProjectileSystem } from './ProjectileSystem';
+import type { DeathFragments } from '@entities/DeathFragments';
 
 const SPECS = enemyData as EnemySpec[];
 
@@ -35,6 +36,7 @@ export class EnemyManager {
     now: number,
     obstacles: Box3[],
     projectiles: ProjectileSystem,
+    fragments?: DeathFragments,
   ): number {
     let damageToPlayer = 0;
     for (let i = this.enemies.length - 1; i >= 0; i--) {
@@ -42,7 +44,7 @@ export class EnemyManager {
       if (!e) continue;
       damageToPlayer += e.update(deltaTime, playerPos, now, obstacles, projectiles);
       if (e.isDead) {
-        e.destroy(this.scene);
+        e.destroy(fragments);
         this.enemies.splice(i, 1);
       }
     }
@@ -50,7 +52,7 @@ export class EnemyManager {
   }
 
   clear(): void {
-    for (const e of this.enemies) e.destroy(this.scene);
+    for (const e of this.enemies) e.destroy();
     this.enemies.length = 0;
   }
 

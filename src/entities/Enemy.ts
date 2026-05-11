@@ -1,16 +1,10 @@
-import {
-  Mesh,
-  BoxGeometry,
-  MeshStandardMaterial,
-  Vector3,
-  Scene,
-  Box3,
-  Object3D,
-} from 'three';
+import { Vector3, Scene, Box3, Object3D } from 'three';
 import type { EnemyKind } from '@systems/ScoreSystem';
 import type { Damageable } from '@systems/Health';
 import type { HittableTarget } from '@systems/WeaponSystem';
 import type { ProjectileSystem } from '@systems/ProjectileSystem';
+import { createEnemyVisual, disposeVisual, type EnemyVisual } from './EnemyMesh';
+import type { DeathFragments } from './DeathFragments';
 
 export type EnemyState = 'SPAWN' | 'CHASE' | 'ATTACK' | 'STUN' | 'DIE';
 
@@ -25,8 +19,6 @@ export interface EnemySpec {
   color: string;
 }
 
-const ENEMY_HEIGHT = 1.6;
-const ENEMY_HALF = 0.4;
 const AVOID_RADIUS = 1.6;
 
 export class Enemy implements Damageable, HittableTarget {
@@ -35,21 +27,24 @@ export class Enemy implements Damageable, HittableTarget {
   maxHp: number;
   kind: EnemyKind;
   state: EnemyState = 'SPAWN';
-  mesh: Mesh;
+  visual: EnemyVisual;
   position: Vector3;
   spawnedAt = 0;
   lastAttackAt = -Infinity;
   stunUntil = 0;
+  hitFlashUntil = 0;
 
+  private bobPhase = 0;
   private hitBox = new Box3();
   private dir = new Vector3();
   private avoid = new Vector3();
   private tmpBox = new Box3();
   private tmpVec = new Vector3();
+  private baseColor: number;
 
   constructor(
     public spec: EnemySpec,
-    scene: Scene,
+    private scene: Scene,
     pos: Vector3,
     now: number,
   ) {
@@ -57,30 +52,36 @@ export class Enemy implements Damageable, HittableTarget {
     this.hp = spec.hp;
     this.maxHp = spec.hp;
     this.spawnedAt = now;
-    const color = Number(spec.color);
-    const mat = new MeshStandardMaterial({ color });
-    this.mesh = new Mesh(new BoxGeometry(ENEMY_HALF * 2, ENEMY_HEIGHT, ENEMY_HALF * 2), mat);
-    this.mesh.position.copy(pos);
-    this.mesh.position.y = ENEMY_HEIGHT / 2;
-    this.mesh.userData['enemyRef'] = this;
-    scene.add(this.mesh);
-    this.position = this.mesh.position;
+    this.baseColor = Number(spec.color);
+    this.visual = createEnemyVisual(spec.id, this.baseColor);
+    this.visual.root.position.copy(pos);
+    this.visual.root.position.y = 0;
+    this.visual.root.userData['enemyRef'] = this;
+    scene.add(this.visual.root);
+    this.position = this.visual.root.position;
+    this.bobPhase = Math.random() * Math.PI * 2;
     setTimeout(() => {
       if (this.state === 'SPAWN') this.state = 'CHASE';
     }, 400);
   }
 
+  get visualHeight(): number {
+    return this.visual.height;
+  }
+
   takeDamage(_amount: number, _isHeadshot: boolean): void {
     if (this.isDead) return;
     this.state = 'STUN';
-    this.stunUntil = performance.now() + 80;
+    const now = performance.now();
+    this.stunUntil = now + 80;
+    this.hitFlashUntil = now + 120;
   }
 
   getHitTarget(): { position: Vector3; headThresholdY: number; object: Object3D } {
     return {
       position: this.position,
-      headThresholdY: this.position.y + ENEMY_HEIGHT * 0.3,
-      object: this.mesh,
+      headThresholdY: this.position.y + this.visual.height * 0.75,
+      object: this.visual.root,
     };
   }
 
@@ -101,7 +102,24 @@ export class Enemy implements Damageable, HittableTarget {
     return this.avoid;
   }
 
-  /** returns melee damage if attacking this frame, else 0. Shooter fires via projectiles. */
+  private animate(deltaTime: number, now: number, moving: boolean): void {
+    this.bobPhase += deltaTime * (moving ? 6 : 2);
+    const bobAmp = moving ? 0.08 : 0.04;
+    this.visual.bobTarget.position.y = Math.sin(this.bobPhase) * bobAmp;
+    const scalePulse = 1 + Math.sin(this.bobPhase * 0.5) * 0.02;
+    this.visual.bobTarget.scale.setScalar(scalePulse);
+
+    const pulse = 0.7 + Math.sin(now * 0.004) * 0.4;
+    this.visual.core.emissiveIntensity = (this.kind === 'charger' ? 2.2 : 1.2) * pulse;
+    this.visual.light.intensity = (this.kind === 'charger' ? 1.4 : 0.9) * pulse;
+
+    if (now < this.hitFlashUntil) {
+      for (const m of this.visual.bodyMaterials) m.emissiveIntensity = 1.6;
+    } else {
+      for (const m of this.visual.bodyMaterials) m.emissiveIntensity = 0.35;
+    }
+  }
+
   update(
     deltaTime: number,
     playerPos: Vector3,
@@ -110,6 +128,7 @@ export class Enemy implements Damageable, HittableTarget {
     projectiles: ProjectileSystem,
   ): number {
     if (this.isDead) return 0;
+    this.animate(deltaTime, now, this.state === 'CHASE');
     if (this.state === 'STUN' && now < this.stunUntil) return 0;
     if (this.state === 'STUN') this.state = 'CHASE';
     if (this.state === 'SPAWN') return 0;
@@ -128,6 +147,8 @@ export class Enemy implements Damageable, HittableTarget {
     }
 
     const inAttackRange = distance <= this.spec.attackRange;
+    const lookY = this.position.y + this.visual.height * 0.4;
+    this.visual.root.lookAt(playerPos.x, lookY, playerPos.z);
 
     if (this.kind === 'shooter') {
       const preferredDist = 10;
@@ -137,13 +158,11 @@ export class Enemy implements Damageable, HittableTarget {
         this.position.x -= this.dir.x * this.spec.moveSpeed * deltaTime;
         this.position.z -= this.dir.z * this.spec.moveSpeed * deltaTime;
       }
-      this.mesh.lookAt(playerPos.x, this.position.y, playerPos.z);
-      if (
-        inAttackRange &&
-        now - this.lastAttackAt >= this.spec.attackCooldownMs
-      ) {
+      if (inAttackRange && now - this.lastAttackAt >= this.spec.attackCooldownMs) {
         this.lastAttackAt = now;
-        projectiles.spawn(this.position.clone(), playerPos, this.spec.attackDamage);
+        const muzzle = this.position.clone();
+        muzzle.y += this.visual.height * 0.6;
+        projectiles.spawn(muzzle, playerPos, this.spec.attackDamage);
         this.state = 'ATTACK';
       }
       return 0;
@@ -152,7 +171,6 @@ export class Enemy implements Damageable, HittableTarget {
     if (!inAttackRange) {
       this.state = 'CHASE';
       this.move(deltaTime);
-      this.mesh.lookAt(playerPos.x, this.position.y, playerPos.z);
       return 0;
     }
 
@@ -174,13 +192,17 @@ export class Enemy implements Damageable, HittableTarget {
     this.position.z += this.dir.z * step;
   }
 
-  destroy(scene: Scene): void {
-    scene.remove(this.mesh);
-    this.mesh.geometry.dispose();
-    (this.mesh.material as MeshStandardMaterial).dispose();
+  destroy(fragments?: DeathFragments): void {
+    if (fragments) {
+      const center = this.position.clone();
+      center.y += this.visual.height * 0.4;
+      fragments.burst(center, this.baseColor, 16);
+    }
+    this.scene.remove(this.visual.root);
+    disposeVisual(this.visual);
   }
 
   computeBoundingBox(): Box3 {
-    return this.hitBox.setFromObject(this.mesh);
+    return this.hitBox.setFromObject(this.visual.root);
   }
 }
