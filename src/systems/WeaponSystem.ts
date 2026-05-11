@@ -46,6 +46,7 @@ export class WeaponSystem {
   readonly slots: WeaponState[];
   activeIndex = 0;
   prevIndex = 0;
+  firedThisFrame = false;
 
   private tracers: TracerPool;
   private muzzle: MuzzleFlash;
@@ -117,6 +118,7 @@ export class WeaponSystem {
     w.ammoInMag -= 1;
     w.nextFireAt = t + w.spec.fireRateMs;
     this.muzzle.trigger(t);
+    this.firedThisFrame = true;
 
     const results: HitResult[] = [];
     const origin = new Vector3();
@@ -170,6 +172,7 @@ export class WeaponSystem {
     targets: readonly HittableTarget[],
     ads = 0,
   ): HitResult[] {
+    this.firedThisFrame = false;
     if (input.wasActionTriggered('WEAPON_1')) this.switchTo(0);
     if (input.wasActionTriggered('WEAPON_2')) this.switchTo(1);
     if (input.wasActionTriggered('WEAPON_3')) this.switchTo(2);

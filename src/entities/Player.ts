@@ -21,6 +21,7 @@ export class Player {
   private dashCooldown = 0;
   private dashDir = new Vector3();
   private grounded = false;
+  horizontalSpeed = 0;
 
   private readonly forward = new Vector3();
   private readonly right = new Vector3();
@@ -95,5 +96,6 @@ export class Player {
 
     const t = this.body.translation();
     this.position.set(t.x, t.y - PLAYER_HEIGHT / 2 + 1.6, t.z);
+    this.horizontalSpeed = Math.hypot(movement.x, movement.z) / Math.max(deltaTime, 1e-3);
   }
 }

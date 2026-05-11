@@ -256,12 +256,19 @@ export class SettingsMenu {
             .join('')}
         </select>
       </div>
+      <div class="settings-row">
+        <label>Show first-person weapon</label>
+        <input type="checkbox" id="opt-vm" ${o.showViewmodel ? 'checked' : ''} />
+      </div>
     `;
     (this.body.querySelector('#opt-gfx') as HTMLSelectElement).addEventListener('change', (e) => {
       this.emit({ graphicsPreset: (e.target as HTMLSelectElement).value as OptionsState['graphicsPreset'] });
     });
     (this.body.querySelector('#opt-crosshair') as HTMLSelectElement).addEventListener('change', (e) => {
       this.emit({ crosshair: (e.target as HTMLSelectElement).value as CrosshairStyle });
+    });
+    (this.body.querySelector('#opt-vm') as HTMLInputElement).addEventListener('change', (e) => {
+      this.emit({ showViewmodel: (e.target as HTMLInputElement).checked });
     });
   }
 

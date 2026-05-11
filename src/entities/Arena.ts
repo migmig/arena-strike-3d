@@ -12,6 +12,7 @@ import {
   Vector3,
 } from 'three';
 import RAPIER from '@dimforge/rapier3d-compat';
+import { buildGroundTexture, buildWallTexture, buildCoverTexture } from './ProceduralTextures';
 
 interface Cover {
   x: number;
@@ -43,12 +44,20 @@ export interface ArenaResult {
 }
 
 export function buildArena(scene: Scene, world: RAPIER.World): ArenaResult {
-  const groundMat = new MeshStandardMaterial({ color: 0x2a2a35, roughness: 0.9 });
+  const groundMat = new MeshStandardMaterial({
+    color: 0xffffff,
+    map: buildGroundTexture(14),
+    roughness: 0.92,
+    metalness: 0.05,
+  });
   const ground = new Mesh(new PlaneGeometry(ARENA_HALF * 2, ARENA_HALF * 2), groundMat);
   ground.rotation.x = -Math.PI / 2;
   scene.add(ground);
 
   const grid = new GridHelper(ARENA_HALF * 2, 50, 0x4a4a55, 0x3a3a45);
+  const gridMat = grid.material as { transparent: boolean; opacity: number };
+  gridMat.transparent = true;
+  gridMat.opacity = 0.35;
   scene.add(grid);
 
   world.createCollider(
@@ -62,14 +71,32 @@ export function buildArena(scene: Scene, world: RAPIER.World): ArenaResult {
     [ARENA_HALF, 0, 0.5, ARENA_HALF],
     [-ARENA_HALF, 0, 0.5, ARENA_HALF],
   ];
+  const wallTexLR = buildWallTexture(1, 1);
+  wallTexLR.repeat.set(Math.round(ARENA_HALF * 2 / 4), 1);
+  const wallTexFB = buildWallTexture(1, 1);
+  wallTexFB.repeat.set(Math.round(ARENA_HALF * 2 / 4), 1);
+  const wallMat = new MeshStandardMaterial({
+    color: 0xffffff,
+    map: wallTexLR,
+    roughness: 0.7,
+    metalness: 0.25,
+  });
   for (const [tx, tz, sx, sz] of walls) {
     world.createCollider(
       RAPIER.ColliderDesc.cuboid(sx, wallH / 2, sz).setTranslation(tx, wallH / 2, tz),
     );
+    const wallMesh = new Mesh(new BoxGeometry(sx * 2, wallH, sz * 2), wallMat);
+    wallMesh.position.set(tx, wallH / 2, tz);
+    scene.add(wallMesh);
   }
 
   const coverGeom = new BoxGeometry(1, 1, 1);
-  const coverMat = new MeshStandardMaterial({ color: 0x6a6a85, roughness: 0.7 });
+  const coverMat = new MeshStandardMaterial({
+    color: 0xffffff,
+    map: buildCoverTexture(),
+    roughness: 0.65,
+    metalness: 0.2,
+  });
   const instanced = new InstancedMesh(coverGeom, coverMat, COVERS.length);
   const dummy = new Object3D();
   const matrix = new Matrix4();
