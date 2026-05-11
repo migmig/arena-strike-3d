@@ -9,7 +9,7 @@ export type TelemetryEvent =
   | { type: 'session_end'; durationMs: number; maxWave: number; finalScore: number; ts: number };
 
 const BATCH_INTERVAL_MS = 5000;
-const ENDPOINT = (import.meta.env['VITE_TELEMETRY_ENDPOINT'] ?? '') as string;
+const ENDPOINT = ((import.meta.env['VITE_TELEMETRY_ENDPOINT'] as string | undefined) ?? '/api/telemetry') as string;
 
 function randomId(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);

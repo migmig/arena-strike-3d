@@ -167,10 +167,10 @@ PRD.md / SPEC.md 기반 작업 분해. 체크박스로 진행 관리.
 ### 4.1 성능 최적화
 - [x] `InstancedMesh`로 엄폐물/타일 결합
 - [x] LOD (적 메시 거리별 단순화)
-- [ ] Occlusion culling 적용
+- [x] Occlusion culling 적용
 - [x] GC 회피: `_tempVec` 캐싱 전수 점검
 - [x] Object Pool 누락 항목 점검 (총알, 파티클, 데미지 텍스트)
-- [ ] KTX2 텍스처 변환 스크립트 (`scripts/build-assets.ts`)
+- [x] KTX2 텍스처 변환 스크립트 (`scripts/build-assets.mjs`)
 - [x] glTF 압축 (Draco) — `assetLoader` 에 DRACOLoader 연결, 드롭인만 하면 됨
 - [x] 번들 분석 + 동적 import
 
@@ -202,7 +202,7 @@ PRD.md / SPEC.md 기반 작업 분해. 체크박스로 진행 관리.
 - [x] `TelemetrySystem` 이벤트 스키마
 - [x] 옵트인 동의 다이얼로그 (첫 진입)
 - [x] 배치 전송 + `sendBeacon`
-- [ ] 백엔드 엔드포인트 (Cloudflare Workers + D1) 또는 PostHog
+- [x] 백엔드 엔드포인트 (Cloudflare Workers + D1) 또는 PostHog
 
 ### 4.7 안정성
 - [x] WebGL context loss 핸들링
@@ -216,10 +216,10 @@ PRD.md / SPEC.md 기반 작업 분해. 체크박스로 진행 관리.
 - [ ] 60fps 안정성 측정
 
 ### 4.9 밸런싱
-- [ ] 평균 TTK 검증 (Grunt 3발 등)
+- [x] 평균 TTK 검증 (Grunt 3발 등) — `tests/unit/balance.test.ts`
 - [ ] 웨이브당 시간 측정 (60~90초)
-- [ ] 퍽 12종 밸런스 패스
-- [ ] 난이도 4단계 검증
+- [x] 퍽 12종 밸런스 패스 — 12종 정의 + 스택 / 캡 자동 검증
+- [x] 난이도 4단계 검증 — 단조 증가 + 핵심 TTK 한계 자동 검증
 
 ### 4.10 에셋 / 라이선스
 - [x] CC0 에셋 수집 (Kenney, Quaternius) — 절차적(자체 CC0) 자산 도입 + 외부 glb 드롭인 파이프라인. 권장 출처는 `ASSETS.md` 표 참고

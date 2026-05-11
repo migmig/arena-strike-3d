@@ -39,6 +39,7 @@ export class Enemy implements Damageable, HittableTarget {
   private dir = new Vector3();
   private avoid = new Vector3();
   private lodLevel = 0;
+  private occluded = false;
   private tmpBox = new Box3();
   private tmpVec = new Vector3();
   private baseColor: number;
@@ -104,7 +105,7 @@ export class Enemy implements Damageable, HittableTarget {
   }
 
   private animate(deltaTime: number, now: number, moving: boolean): void {
-    if (this.lodLevel === 2) {
+    if (this.occluded || this.lodLevel === 2) {
       this.visual.bobTarget.position.y = 0;
       this.visual.bobTarget.scale.setScalar(1);
       this.visual.light.intensity = 0;
@@ -137,9 +138,16 @@ export class Enemy implements Damageable, HittableTarget {
     let level = 0;
     if (distSq > 40 * 40) level = 2;
     else if (distSq > 22 * 22) level = 1;
-    if (level === this.lodLevel) return;
-    this.lodLevel = level;
-    this.visual.light.visible = level < 2;
+    if (level !== this.lodLevel) {
+      this.lodLevel = level;
+    }
+    this.visual.light.visible = level < 2 && !this.occluded;
+  }
+
+  applyOcclusion(occluded: boolean): void {
+    if (occluded === this.occluded) return;
+    this.occluded = occluded;
+    this.visual.light.visible = !occluded && this.lodLevel < 2;
   }
 
   update(
