@@ -7,6 +7,8 @@ export interface ScoreEntry {
   date: number;
 }
 
+export type CrosshairStyle = 'dot' | 'cross' | 'circle' | 'none';
+
 export interface OptionsState {
   sensitivity: number;
   fov: number;
@@ -17,6 +19,7 @@ export interface OptionsState {
   uiScale: 0.8 | 1.0 | 1.25 | 1.5;
   colorBlindMode: 'off' | 'protanopia' | 'deuteranopia' | 'tritanopia';
   reduceMotion: boolean;
+  crosshair: CrosshairStyle;
   difficulty: Difficulty;
 }
 
@@ -41,6 +44,7 @@ export const DEFAULT_OPTIONS: OptionsState = {
   uiScale: 1.0,
   colorBlindMode: 'off',
   reduceMotion: false,
+  crosshair: 'dot',
   difficulty: 'normal',
 };
 

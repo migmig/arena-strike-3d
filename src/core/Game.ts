@@ -32,6 +32,7 @@ import { Onboarding } from '@ui/Onboarding';
 import { DamageNumbers } from '@ui/DamageNumbers';
 import { Vignette } from '@ui/Vignette';
 import { EnemyHpBars } from '@ui/EnemyHpBars';
+import { Minimap } from '@ui/Minimap';
 
 export interface GameEvents {
   stateChange: { from: string; to: string };
@@ -77,6 +78,7 @@ export class Game {
   damageNumbers!: DamageNumbers;
   vignette!: Vignette;
   enemyHpBars!: EnemyHpBars;
+  minimap!: Minimap;
 
   private lastTime = 0;
   private running = false;
@@ -125,6 +127,7 @@ export class Game {
     this.damageNumbers = new DamageNumbers(this.hudParent, this.renderer.camera);
     this.vignette = new Vignette(this.hudParent);
     this.enemyHpBars = new EnemyHpBars(this.hudParent, this.renderer.camera);
+    this.minimap = new Minimap(this.hudParent, ARENA_HALF);
 
     this.applyOptionsFromSave();
     this.renderer.onContextLostCallback = () => this.state.transition('PAUSED');
@@ -150,6 +153,8 @@ export class Game {
     this.audio.setVolumes(o.bgmVolume, o.sfxVolume);
     this.renderer.applyPreset(o.graphicsPreset);
     this.cameraShake.enabled = !o.reduceMotion;
+    this.vignette?.setReduceMotion(o.reduceMotion);
+    this.hud?.setCrosshairStyle(o.crosshair);
     this.accessibility.apply(o);
   }
 
@@ -279,6 +284,7 @@ export class Game {
       this.vignette.update(deltaMs);
       this.damageNumbers.update(now, window.innerWidth, window.innerHeight);
       this.enemyHpBars.update(this.enemies.alive, window.innerWidth, window.innerHeight);
+      this.minimap.update(now, this.player.position, this.cameraController.yaw, this.enemies.alive, this.boss, this.pickups);
       this.onboarding.update(now);
     }
     this.renderer.render();

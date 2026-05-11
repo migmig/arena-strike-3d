@@ -2,6 +2,7 @@ import type { PlayerStats } from '@systems/Health';
 import type { ScoreSystem } from '@systems/ScoreSystem';
 import type { WeaponSystem } from '@systems/WeaponSystem';
 import type { WaveSystem } from '@systems/WaveSystem';
+import type { CrosshairStyle } from '@managers/SaveManager';
 
 export class HUD {
   private root: HTMLDivElement;
@@ -34,10 +35,22 @@ export class HUD {
         .combo { font-size: 14px; color: #ffd060; min-height: 18px; }
         .score { position: absolute; top: 16px; right: 24px; font-size: 18px; }
         .crosshair {
-          position: absolute; left: 50%; top: 50%; width: 6px; height: 6px;
-          margin-left: -3px; margin-top: -3px;
-          background: #fff; opacity: 0.85; border-radius: 50%; pointer-events: none;
+          position: absolute; left: 50%; top: 50%;
+          pointer-events: none; opacity: 0.85;
+          transform: translate(-50%, -50%);
         }
+        .crosshair[data-style="dot"] {
+          width: 6px; height: 6px; background: #fff; border-radius: 50%;
+        }
+        .crosshair[data-style="cross"] {
+          width: 18px; height: 18px; background:
+            linear-gradient(#fff, #fff) center/2px 100% no-repeat,
+            linear-gradient(#fff, #fff) center/100% 2px no-repeat;
+        }
+        .crosshair[data-style="circle"] {
+          width: 14px; height: 14px; border: 1.5px solid #fff; border-radius: 50%; background: transparent;
+        }
+        .crosshair[data-style="none"] { display: none; }
         .hit-marker {
           position: absolute; left: 50%; top: 50%; width: 20px; height: 20px;
           margin-left: -10px; margin-top: -10px; opacity: 0; transition: opacity 0.08s;
@@ -63,7 +76,7 @@ export class HUD {
         <div class="combo" id="combo-text"></div>
       </div>
       <div class="score" id="score-text">0</div>
-      <div class="crosshair"></div>
+      <div class="crosshair" data-style="dot"></div>
       <div class="hit-marker" id="hit-marker"></div>
     `;
     parent.appendChild(this.root);
@@ -77,7 +90,10 @@ export class HUD {
     this.scoreText = this.root.querySelector('#score-text') as HTMLSpanElement;
     this.crosshair = this.root.querySelector('.crosshair') as HTMLDivElement;
     this.hitMarker = this.root.querySelector('#hit-marker') as HTMLDivElement;
-    void this.crosshair;
+  }
+
+  setCrosshairStyle(style: CrosshairStyle): void {
+    this.crosshair.dataset['style'] = style;
   }
 
   showHitMarker(isCrit: boolean): void {

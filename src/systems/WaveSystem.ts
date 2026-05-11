@@ -23,7 +23,6 @@ export interface DifficultyPreset {
 
 export type WaveState = 'INTERMISSION' | 'SPAWNING' | 'CLEARING' | 'COMPLETE';
 
-const ARENA_HALF = 13;
 const WAVES = waveData as WavePlan[];
 const DIFFICULTIES = difficultyData as DifficultyPreset[];
 
