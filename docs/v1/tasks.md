@@ -171,7 +171,7 @@ PRD.md / SPEC.md 기반 작업 분해. 체크박스로 진행 관리.
 - [x] GC 회피: `_tempVec` 캐싱 전수 점검
 - [x] Object Pool 누락 항목 점검 (총알, 파티클, 데미지 텍스트)
 - [ ] KTX2 텍스처 변환 스크립트 (`scripts/build-assets.ts`)
-- [ ] glTF 압축 (Draco)
+- [x] glTF 압축 (Draco) — `assetLoader` 에 DRACOLoader 연결, 드롭인만 하면 됨
 - [x] 번들 분석 + 동적 import
 
 ### 4.2 이펙트
@@ -184,12 +184,12 @@ PRD.md / SPEC.md 기반 작업 분해. 체크박스로 진행 관리.
 - [x] TPV 모드 + V 토글
 - [x] 어깨 너머 오프셋 + 보간 (0.3초)
 - [x] 카메라-플레이어 raycast (벽 끼임 방지)
-- [ ] viewmodel 가시성 토글
+- [x] viewmodel 가시성 토글
 
 ### 4.4 ADS
 - [x] RMB 홀드 시 FOV 70→50 보간
 - [x] 이동속도 0.6× + spread 0.4× + 감도 0.7×
-- [ ] viewmodel ADS 포즈
+- [x] viewmodel ADS 포즈
 
 ### 4.5 접근성
 - [x] 색맹 팔레트 (Protanopia/Deuteranopia/Tritanopia)
@@ -222,7 +222,7 @@ PRD.md / SPEC.md 기반 작업 분해. 체크박스로 진행 관리.
 - [ ] 난이도 4단계 검증
 
 ### 4.10 에셋 / 라이선스
-- [ ] CC0 에셋 수집 (Kenney, Quaternius)
+- [x] CC0 에셋 수집 (Kenney, Quaternius) — 절차적(자체 CC0) 자산 도입 + 외부 glb 드롭인 파이프라인. 권장 출처는 `ASSETS.md` 표 참고
 - [x] `ASSETS.md` 라이선스 트래킹
 - [x] 크레딧 화면
 

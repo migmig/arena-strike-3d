@@ -22,6 +22,7 @@ export interface OptionsState {
   colorBlindMode: 'off' | 'protanopia' | 'deuteranopia' | 'tritanopia';
   reduceMotion: boolean;
   crosshair: CrosshairStyle;
+  showViewmodel: boolean;
   difficulty: Difficulty;
 }
 
@@ -48,6 +49,7 @@ export const DEFAULT_OPTIONS: OptionsState = {
   colorBlindMode: 'off',
   reduceMotion: false,
   crosshair: 'dot',
+  showViewmodel: true,
   difficulty: 'normal',
 };
 

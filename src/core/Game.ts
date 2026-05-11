@@ -24,6 +24,7 @@ import { AudioManager } from '@managers/AudioManager';
 import { Accessibility } from '@managers/Accessibility';
 import { HitParticles } from '@entities/HitParticles';
 import { DeathFragments } from '@entities/DeathFragments';
+import { Viewmodel } from '@entities/Viewmodel';
 import { TelemetrySystem } from '@systems/Telemetry';
 import { HUD } from '@ui/HUD';
 import { PerkSelect } from '@ui/PerkSelect';
@@ -70,6 +71,7 @@ export class Game {
   particles!: HitParticles;
   projectiles!: ProjectileSystem;
   fragments!: DeathFragments;
+  viewmodel!: Viewmodel;
   obstacles: Box3[] = [];
 
   hud!: HUD;
@@ -122,6 +124,8 @@ export class Game {
     this.particles = new HitParticles(this.renderer.scene);
     this.projectiles = new ProjectileSystem(this.renderer.scene);
     this.fragments = new DeathFragments(this.renderer.scene);
+    this.viewmodel = new Viewmodel(this.renderer.camera);
+    this.renderer.scene.add(this.renderer.camera);
 
     this.hud = new HUD(this.hudParent);
     this.perkUi = new PerkSelect(this.hudParent);
@@ -175,6 +179,7 @@ export class Game {
     this.cameraShake.enabled = !o.reduceMotion;
     this.vignette?.setReduceMotion(o.reduceMotion);
     this.hud?.setCrosshairStyle(o.crosshair);
+    this.viewmodel?.setVisible(o.showViewmodel);
     this.accessibility.apply(o);
   }
 
@@ -235,6 +240,10 @@ export class Game {
 
       const targets = this.boss ? [...this.enemies.alive, this.boss] : this.enemies.alive;
       const hits = this.weapons.update(this.input, targets, this.cameraController.ads);
+      this.viewmodel.setWeapon(this.weapons.active.spec.id);
+      this.viewmodel.setMode(this.cameraController.mode === 'TPV');
+      if (this.weapons.firedThisFrame) this.viewmodel.triggerRecoil();
+      this.viewmodel.update(deltaTime, this.cameraController.ads, this.player.horizontalSpeed);
       for (const hit of hits) {
         this.hud.showHitMarker(hit.isHeadshot);
         this.audio.playSfx('hit');
