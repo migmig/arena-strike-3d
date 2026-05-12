@@ -25,7 +25,7 @@ export const DEFAULT_PLAYER_STATS: PlayerStats = {
 
 export function applyDamage(target: Damageable, amount: number, isHeadshot: boolean): number {
   if (target.isDead) return 0;
-  const dealt = isHeadshot ? amount * 2 : amount;
+  const dealt = Math.max(0, amount);
   target.hp = Math.max(0, target.hp - dealt);
   target.takeDamage(dealt, isHeadshot);
   if (target.hp <= 0) target.isDead = true;

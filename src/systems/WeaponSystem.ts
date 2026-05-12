@@ -5,7 +5,52 @@ import type { RNG } from '@utils/rng';
 import type { InputManager } from '@managers/InputManager';
 import { TracerPool } from '@entities/Tracer';
 import { MuzzleFlash } from '@entities/MuzzleFlash';
-import { applyDamage, type Damageable } from './Health';
+import { applyDamage, type Damageable, type PlayerStats } from './Health';
+import { DEFAULT_PERK_MODS, type PerkModifiers } from './PerkSystem';
+import type { ActiveBuff } from './PickupSystem';
+
+/**
+ * Modifiers consumed by the fire path. Defaults are neutral — passing
+ * `undefined` for any of these is equivalent to no perks/buffs/crits.
+ */
+export interface FireModifiers {
+  perkMods?: PerkModifiers;
+  buffs?: readonly ActiveBuff[];
+  stats?: PlayerStats;
+}
+
+const NEUTRAL_FIRE_MODS: Required<FireModifiers> = {
+  perkMods: DEFAULT_PERK_MODS,
+  buffs: [],
+  stats: {
+    maxHealth: 100,
+    currentHealth: 100,
+    moveSpeedMultiplier: 1,
+    reloadSpeedMultiplier: 1,
+    critChance: 0,
+    dashCooldown: 3,
+  },
+};
+
+/**
+ * Canonical damage formula. Caller-owned so it can be unit tested
+ * independently of the rest of the WeaponSystem (which needs Three.js).
+ *
+ *   final = base × damageMul × (HS ? headshotMul : 1) × (crit ? 2 : 1) × (boost ? 2 : 1)
+ */
+export function computeFinalDamage(
+  base: number,
+  isHeadshot: boolean,
+  isCrit: boolean,
+  perkMods: PerkModifiers,
+  damageBoostActive: boolean,
+): number {
+  let dmg = base * perkMods.damageMul;
+  if (isHeadshot) dmg *= perkMods.headshotMul;
+  if (isCrit) dmg *= 2;
+  if (damageBoostActive) dmg *= 2;
+  return dmg;
+}
 
 export type WeaponId = 'pistol' | 'smg' | 'shotgun';
 
@@ -107,7 +152,11 @@ export class WeaponSystem {
     w.reloadingUntil = 0;
   }
 
-  private fire(targets: readonly HittableTarget[], adsFactor = 1): HitResult[] {
+  private fire(
+    targets: readonly HittableTarget[],
+    adsFactor: number,
+    mods: Required<FireModifiers>,
+  ): HitResult[] {
     const w = this.active;
     const t = this.now();
     if (t < w.nextFireAt || w.reloadingUntil > 0) return [];
@@ -124,6 +173,9 @@ export class WeaponSystem {
     const origin = new Vector3();
     this.camera.getWorldPosition(origin);
 
+    const damageBoostActive = mods.buffs.some((b) => b.id === 'damage_boost');
+    const critChance = mods.stats.critChance;
+
     const spread = w.spec.spread * adsFactor;
     for (let i = 0; i < w.spec.pellets; i++) {
       this.camera.getWorldDirection(this.dir);
@@ -138,8 +190,22 @@ export class WeaponSystem {
       const hit = this.raycastTargets(targets);
       if (hit) {
         const isHeadshot = hit.point.y >= hit.target.getHitTarget().headThresholdY;
-        applyDamage(hit.target, w.spec.damage, isHeadshot);
-        results.push({ target: hit.target, damage: w.spec.damage, isHeadshot, point: hit.point });
+        const isCrit = critChance > 0 && this.rng.next() < critChance;
+        const finalDamage = computeFinalDamage(
+          w.spec.damage,
+          isHeadshot,
+          isCrit,
+          mods.perkMods,
+          damageBoostActive,
+        );
+        applyDamage(hit.target, finalDamage, isHeadshot);
+        results.push({
+          target: hit.target,
+          damage: finalDamage,
+          isHeadshot,
+          isCrit,
+          point: hit.point,
+        });
         this.tracers.spawn(origin, hit.point);
       } else {
         const end = origin.clone().add(this.dir.clone().multiplyScalar(w.spec.range));
@@ -171,6 +237,7 @@ export class WeaponSystem {
     input: InputManager,
     targets: readonly HittableTarget[],
     ads = 0,
+    fireMods: FireModifiers = {},
   ): HitResult[] {
     this.firedThisFrame = false;
     if (input.wasActionTriggered('WEAPON_1')) this.switchTo(0);
@@ -189,7 +256,12 @@ export class WeaponSystem {
       : input.wasActionTriggered('FIRE');
     if (wantFire) {
       const adsFactor = 1 - ads * 0.6;
-      return this.fire(targets, adsFactor);
+      const merged: Required<FireModifiers> = {
+        perkMods: fireMods.perkMods ?? NEUTRAL_FIRE_MODS.perkMods,
+        buffs: fireMods.buffs ?? NEUTRAL_FIRE_MODS.buffs,
+        stats: fireMods.stats ?? NEUTRAL_FIRE_MODS.stats,
+      };
+      return this.fire(targets, adsFactor, merged);
     }
     return [];
   }
@@ -199,5 +271,6 @@ export interface HitResult {
   target: HittableTarget;
   damage: number;
   isHeadshot: boolean;
+  isCrit: boolean;
   point: Vector3;
 }

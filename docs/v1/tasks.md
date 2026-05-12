@@ -76,7 +76,8 @@ PRD.md / SPEC.md 기반 작업 분해. 체크박스로 진행 관리.
 - [x] HP 관리 + 사망 처리
 - [x] 적 HP + 피격 + 사망 애니메이션
 - [x] 헤드샷 판정 (히트 위치 Y > 임계값)
-- [x] 크리티컬 (퍽 효과)
+- [x] 크리티컬 (퍽 효과) — RNG 롤 + WeaponSystem에 배선 (`computeFinalDamage`)
+- [x] 데미지 모디파이어 배선 (damage_up / headshot_bonus / damage_boost) — `tests/unit/damage.test.ts`
 
 ### 2.4 점수 & 콤보
 - [x] `ScoreSystem` — 처치 점수 + 콤보 배율

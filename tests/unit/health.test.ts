@@ -11,7 +11,7 @@ function makeTarget(hp = 100): Damageable {
 }
 
 describe('Health', () => {
-  it('일반 데미지는 그대로 적용된다', () => {
+  it('전달된 데미지를 그대로 차감한다 (헤드샷/모디파이어는 호출자가 계산)', () => {
     const t = makeTarget(50);
     const dealt = applyDamage(t, 20, false);
     expect(dealt).toBe(20);
@@ -19,11 +19,20 @@ describe('Health', () => {
     expect(t.isDead).toBe(false);
   });
 
-  it('헤드샷은 2배 데미지', () => {
-    const t = makeTarget(50);
+  it('isHeadshot 플래그는 takeDamage 콜백에만 전달되고 데미지 자체에는 영향 없음', () => {
+    let observed: { amount: number; hs: boolean } | null = null;
+    const t: Damageable = {
+      hp: 50,
+      maxHp: 50,
+      isDead: false,
+      takeDamage: (amount, isHeadshot) => {
+        observed = { amount, hs: isHeadshot };
+      },
+    };
     const dealt = applyDamage(t, 20, true);
-    expect(dealt).toBe(40);
-    expect(t.hp).toBe(10);
+    expect(dealt).toBe(20);
+    expect(t.hp).toBe(30);
+    expect(observed).toEqual({ amount: 20, hs: true });
   });
 
   it('HP 0 이하는 isDead로 설정', () => {

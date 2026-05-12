@@ -241,16 +241,21 @@ export class Game {
       );
 
       const targets = this.boss ? [...this.enemies.alive, this.boss] : this.enemies.alive;
-      const hits = this.weapons.update(this.input, targets, this.cameraController.ads);
+      const hits = this.weapons.update(this.input, targets, this.cameraController.ads, {
+        perkMods: this.perks.mods,
+        buffs: this.activeBuffs,
+        stats: this.stats,
+      });
       this.viewmodel.setWeapon(this.weapons.active.spec.id);
       this.viewmodel.setMode(this.cameraController.mode === 'TPV');
       if (this.weapons.firedThisFrame) this.viewmodel.triggerRecoil();
       this.viewmodel.update(deltaTime, this.cameraController.ads, this.player.horizontalSpeed);
       for (const hit of hits) {
-        this.hud.showHitMarker(hit.isHeadshot);
+        const emphasize = hit.isHeadshot || hit.isCrit;
+        this.hud.showHitMarker(emphasize);
         this.audio.playSfx('hit');
         this.particles.burst(hit.point, 8);
-        this.damageNumbers.spawn(hit.point, hit.damage, hit.isHeadshot);
+        this.damageNumbers.spawn(hit.point, hit.damage, emphasize);
         this.onboarding.trigger('fire');
         if (hit.target.isDead && 'kind' in hit.target) {
           const k = (hit.target as { kind: EnemyKind }).kind;

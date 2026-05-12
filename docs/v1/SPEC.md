@@ -123,6 +123,27 @@ class CameraController {
   }
   ```
 
+#### Canonical 데미지 공식
+사격 시 한 발(혹은 한 펠릿)이 표적에 적용하는 최종 데미지는 다음과 같이 계산한다:
+
+```
+final = base
+      × perkMods.damageMul                     // damage_up 퍽: ×1.15 stack
+      × (headshot ? perkMods.headshotMul : 1)  // 기본 ×2, headshot_bonus 퍽: +0.5
+      × (critRoll  ? 2 : 1)                    // critRoll = rng.next() < stats.critChance
+      × (damageBoostActive ? 2 : 1)            // Damage Boost 픽업 활성 시
+```
+
+- **`base`** = `weapon.damage` (펠릿 분해는 호출자가 펠릿 단위로 raycast 발사하므로 펠릿당 base 그대로 적용)
+- **HitResult**: `{ target, damage, isHeadshot, isCrit, point }` — UI(히트마커/데미지 넘버)는 HS 또는 Crit 시 노랑/X 강조
+- 모든 모디파이어는 **곱셈 합성** (additive headshot_bonus 퍽만 `headshotMul` 자체에 가산되어 곱해짐)
+- RNG: `WeaponSystem`이 소유한 결정론 RNG에서 1회 draw
+
+배선 위치:
+- `WeaponSystem.update(input, targets, ads, mods, stats, buffs)` ← `Game.update`가 전달
+- `WeaponSystem.fire`가 최종 데미지를 계산해 `applyDamage(target, finalDamage, isHeadshot)` 호출
+- `applyDamage(target, amount, isHeadshot)`는 더 이상 헤드샷 ×2를 자체 적용하지 않음 (호출자가 이미 적용한 값을 단순 차감). `isHeadshot`은 `takeDamage` 콜백 메타데이터로만 전달.
+
 ### 2.5 Enemy & AI (`EnemySystem.ts`)
 - **상태 머신 (FSM)**:
   - `SPAWN` (스폰 애니메이션 무적) -> `CHASE` (추적) -> `ATTACK` (공격/사격) -> `STUN` (피격 경직) -> `DIE` (래그돌 또는 데스 애니메이션 후 소멸)
