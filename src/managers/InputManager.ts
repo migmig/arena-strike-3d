@@ -59,6 +59,8 @@ export class InputManager {
   private triggeredMouse = new Set<number>();
   private prevKeys = new Set<string>();
   private prevMouse = new Set<number>();
+  private virtualPressed = new Set<Action>();
+  private virtualTriggered = new Set<Action>();
 
   mouseDeltaX = 0;
   mouseDeltaY = 0;
@@ -134,6 +136,7 @@ export class InputManager {
   };
 
   isActionPressed(action: Action): boolean {
+    if (this.virtualPressed.has(action)) return true;
     const bindings = this.keymap[action];
     for (const b of bindings) {
       if (b.device === 'kbd' && this.keys.has(b.code)) return true;
@@ -143,12 +146,24 @@ export class InputManager {
   }
 
   wasActionTriggered(action: Action): boolean {
+    if (this.virtualTriggered.has(action)) return true;
     const bindings = this.keymap[action];
     for (const b of bindings) {
       if (b.device === 'kbd' && this.triggeredKeys.has(b.code)) return true;
       if (b.device === 'mouse' && this.triggeredMouse.has(Number(b.code))) return true;
     }
     return false;
+  }
+
+  /** Inject a virtual action state, used by autoplay/perf tooling. */
+  setVirtual(action: Action, pressed: boolean): void {
+    const was = this.virtualPressed.has(action);
+    if (pressed) {
+      if (!was) this.virtualTriggered.add(action);
+      this.virtualPressed.add(action);
+    } else {
+      this.virtualPressed.delete(action);
+    }
   }
 
   endFrame(): void {
@@ -158,6 +173,7 @@ export class InputManager {
     this.prevMouse = new Set(this.mouseButtons);
     this.triggeredKeys.clear();
     this.triggeredMouse.clear();
+    this.virtualTriggered.clear();
   }
 
   getKeymap(): KeyMap {

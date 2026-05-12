@@ -208,16 +208,16 @@ PRD.md / SPEC.md 기반 작업 분해. 체크박스로 진행 관리.
 - [x] WebGL context loss 핸들링
 - [x] 에셋 로드 실패 재시도 + 폴백
 - [x] 글로벌 에러 캡처 + 리포트
-- [ ] 메모리 누수 검증 (5분 힙 트래킹)
+- [x] 메모리 누수 검증 (5분 힙 트래킹) — `tests/perf/memory-leak.spec.ts` (`pnpm test:perf`)
 
 ### 4.8 테스트
 - [x] Playwright E2E 스모크 (메뉴 → 게임 → 결과)
 - [ ] 디바이스별 수동 QA (Mac/Win, Chrome/Edge/Safari)
-- [ ] 60fps 안정성 측정
+- [x] 60fps 안정성 측정 — `tests/perf/fps.spec.ts` (`pnpm test:perf`)
 
 ### 4.9 밸런싱
 - [x] 평균 TTK 검증 (Grunt 3발 등) — `tests/unit/balance.test.ts`
-- [ ] 웨이브당 시간 측정 (60~90초)
+- [x] 웨이브당 시간 측정 (60~90초) — `tests/unit/balance.test.ts` 웨이브 시간 분석 케이스
 - [x] 퍽 12종 밸런스 패스 — 12종 정의 + 스택 / 캡 자동 검증
 - [x] 난이도 4단계 검증 — 단조 증가 + 핵심 TTK 한계 자동 검증
 

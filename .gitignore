@@ -12,3 +12,5 @@ coverage
 .pnpm-store
 package-lock.json
 yarn.lock
+test-results
+playwright-report

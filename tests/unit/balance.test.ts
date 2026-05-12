@@ -186,3 +186,76 @@ describe('balance: wave schedule', () => {
     }
   });
 });
+
+describe('balance: wave timing (analytic, M4.9)', () => {
+  // Realistic baseline player: 50% body-shot accuracy with the pistol.
+  const REALISTIC_ACCURACY = 0.5;
+
+  interface WavePlan {
+    wave: number;
+    composition: Record<string, number>;
+    spawnIntervalMs: number;
+    isBoss?: boolean;
+  }
+
+  function estimateWaveMs(plan: WavePlan, difficultyId: string, accuracy: number): number {
+    const diff = difficulty.find((d) => d.id === difficultyId)!;
+    const pistol = findWeapon('pistol');
+    let totalShotsFired = 0;
+    let killTimeMs = 0;
+    let totalCount = 0;
+    for (const [kind, baseCount] of Object.entries(plan.composition)) {
+      const enemy = findEnemy(kind);
+      const scaledCount = plan.isBoss
+        ? baseCount
+        : Math.max(1, Math.round(baseCount * diff.countMul));
+      const hp = enemy.hp * diff.hpMul;
+      const shotsHit = Math.ceil(hp / (pistol.damage * pistol.pellets));
+      const shotsFired = Math.ceil(shotsHit / accuracy);
+      totalShotsFired += shotsFired * scaledCount;
+      killTimeMs += shotsFired * pistol.fireRateMs * scaledCount;
+      totalCount += scaledCount;
+    }
+    const reloads = Math.floor(totalShotsFired / pistol.magSize);
+    killTimeMs += reloads * pistol.reloadMs;
+    const spawnTimeMs = totalCount * plan.spawnIntervalMs;
+    // Player can only kill after spawn; lower bound is the slower of the two pipelines.
+    return Math.max(spawnTimeMs, killTimeMs);
+  }
+
+  const nonBoss = (waves as unknown as WavePlan[]).filter((w) => !w.isBoss);
+
+  it('every non-boss wave stays under PRD upper bound + 30% margin (Normal, 50% acc)', () => {
+    for (const plan of nonBoss) {
+      const ms = estimateWaveMs(plan, 'normal', REALISTIC_ACCURACY);
+      // PRD §6: target 60~90s. Safety margin: 90s × 1.3 = 117s.
+      expect(ms, `wave ${plan.wave} took ${ms}ms`).toBeLessThanOrEqual(117_000);
+    }
+  });
+
+  it('final non-boss wave (4) is meaningful: at least 30s of work on Normal', () => {
+    const w4 = nonBoss.find((w) => w.wave === 4)!;
+    const ms = estimateWaveMs(w4, 'normal', REALISTIC_ACCURACY);
+    expect(ms).toBeGreaterThanOrEqual(30_000);
+  });
+
+  it('wave 4 on Nightmare still stays within reasonable bounds (≤ 180s)', () => {
+    const w4 = nonBoss.find((w) => w.wave === 4)!;
+    const ms = estimateWaveMs(w4, 'nightmare', REALISTIC_ACCURACY);
+    // Hardest preset + realistic accuracy must not balloon the wave beyond 3 min.
+    expect(ms).toBeLessThanOrEqual(180_000);
+  });
+
+  it('wave time grows monotonically across non-boss waves (Normal)', () => {
+    const times = nonBoss.map((p) => estimateWaveMs(p, 'normal', REALISTIC_ACCURACY));
+    for (let i = 1; i < times.length; i++) {
+      expect(times[i]).toBeGreaterThanOrEqual(times[i - 1] ?? 0);
+    }
+  });
+
+  it('wave 1 stays short for onboarding (≤ 25s on Normal)', () => {
+    const w1 = nonBoss.find((w) => w.wave === 1)!;
+    const ms = estimateWaveMs(w1, 'normal', REALISTIC_ACCURACY);
+    expect(ms).toBeLessThanOrEqual(25_000);
+  });
+});

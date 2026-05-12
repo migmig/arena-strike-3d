@@ -1,4 +1,6 @@
 import { Game } from '@core/Game';
+import { enablePerf, shouldEnableFromUrl } from '@utils/perfHooks';
+import { startAutoplay } from '@utils/autoplay';
 
 const canvas = document.getElementById('game-canvas') as HTMLCanvasElement | null;
 const clickToPlay = document.getElementById('click-to-play');
@@ -13,10 +15,18 @@ window.addEventListener('unhandledrejection', (e) => {
 });
 
 const game = new Game(canvas);
+const perfMode = shouldEnableFromUrl();
+if (perfMode) enablePerf();
 
 async function bootstrap(): Promise<void> {
   await game.init();
   game.start();
+
+  if (perfMode) {
+    clickToPlay?.classList.add('hidden');
+    startAutoplay(game.input);
+    return;
+  }
 
   clickToPlay?.addEventListener('click', () => {
     game.input.requestPointerLock();

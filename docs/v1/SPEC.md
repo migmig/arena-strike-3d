@@ -373,13 +373,50 @@ jobs:
 
 | 레이어 | 도구 | 대상 |
 |---|---|---|
-| 단위 | Vitest | 점수/콤보 산식, 데미지 계산, RNG, 세이브 직렬화 |
+| 단위 | Vitest | 점수/콤보 산식, 데미지 계산, RNG, 세이브 직렬화, 웨이브 시간 분석 |
 | 통합 | Vitest + JSDOM | InputManager 액션 매핑, OptionsManager 적용 |
-| E2E (스모크) | Playwright | 메뉴 → 게임 진입 → 사격 → 일시정지 → 결과화면 |
-| 수동 | 매 빌드 | 60fps 유지, 메모리 안정성 (Chrome DevTools 힙) |
+| E2E (스모크) | Playwright (기본) | 메뉴 → 게임 진입 → 사격 → 일시정지 → 결과화면 |
+| E2E (성능) | Playwright (분리) | 60초 FPS 안정성, 5분 메모리 누수 |
+| 수동 | 출시 전 | 디바이스별 호환성 (Mac/Win × Chrome/Edge/Safari) |
 
 - 적/물리 결정론 테스트: 고정 시드 RNG로 동일 시나리오 재현
 - 회귀 방지: 핵심 버그 픽스마다 단위 테스트 추가
+
+### 12.1 성능/메모리 측정 (`tests/perf/`)
+**별도 실행** — `pnpm test:perf`로만 실행되며 기본 CI 파이프라인에는 포함하지 않는다 (실측 시간 + 헤드리스 환경 변동성).
+
+**계측 훅** — `?perf=1` 쿼리 파라미터가 붙은 경우에만 활성화.
+```ts
+// src/utils/perfHooks.ts
+window.__perf = {
+  frametimes: number[];      // 매 프레임 deltaMs (최근 N개 순환 버퍼)
+  waveTimings: number[];     // wave_complete 이벤트의 timeTakenMs
+  startedAt: number;         // performance.now() 측정 시작 시각
+};
+```
+- `Game.loop`가 `?perf=1`일 때 매 프레임 deltaMs를 push (일반 빌드 영향 0)
+- `wave_complete` 이벤트 발생 시 timing push
+- heap은 Playwright가 `performance.memory.usedJSHeapSize`를 직접 읽음
+
+**자동 진행** — `src/utils/autoplay.ts`
+- `?perf=1`이면 InputManager에 가상 액션 주입: 자동 사격(`FIRE` 액션 유지) + 좌우 스트래이프(8초 주기 토글)
+- Pointer Lock 미요청 환경에서도 입력 시뮬레이션이 동작하도록 InputManager가 `setVirtualAction(name, pressed)` API를 제공
+
+**검증 임계값**
+
+| 측정 | 임계값 (headless) | PRD 목표 (real-device) | 근거 |
+|---|---|---|---|
+| 평균 FPS (60초) | ≥ 40 | ≥ 55 | PRD §14 KPI / headless software rasterizer ceiling ~50fps |
+| p95 frametime | ≤ 40ms | ≤ 20ms | PRD §11 / headless variance buffer |
+| 후반/전반 heap 평균 비율 | ≤ 1.30 | — | 안정화 후 30% 이내 변동 |
+| 절대 heap 상한 | ≤ 500MB | ≤ 500MB | PRD §11 |
+
+PRD KPI(55fps)는 실제 디바이스 텔레메트리/수동 QA로 검증하며, headless 임계값은 회귀 감지(regression guard) 용도다.
+
+**웨이브 시간 분석 (단위 테스트)** — `tests/unit/balance.test.ts`에 추가
+- 이론적 하한 = `count × spawnIntervalMs` (스폰 완료 시각)
+- 이론적 상한 = 하한 + `count × pistolBaselineTTKms` (모든 적 처치 가정)
+- 1~4 웨이브 (Normal): 하한 ≥ 30s 보다 작을 수 있지만 상한 ≤ 95s 이내
 
 ## 13. 보안 / 프라이버시
 

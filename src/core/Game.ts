@@ -26,6 +26,7 @@ import { HitParticles } from '@entities/HitParticles';
 import { DeathFragments } from '@entities/DeathFragments';
 import { Viewmodel } from '@entities/Viewmodel';
 import { TelemetrySystem } from '@systems/Telemetry';
+import { recordFrame, recordWave } from '@utils/perfHooks';
 import { HUD } from '@ui/HUD';
 import { PerkSelect } from '@ui/PerkSelect';
 import { Overlay } from '@ui/Overlay';
@@ -218,6 +219,7 @@ export class Game {
     if (!this.running) return;
     const deltaTime = Math.min((now - this.lastTime) / 1000, 0.1);
     this.lastTime = now;
+    recordFrame(deltaTime * 1000);
     this.update(deltaTime, now);
     requestAnimationFrame(this.loop);
   };
@@ -328,10 +330,12 @@ export class Game {
   }
 
   private async handleWaveCleared(now: number): Promise<void> {
+    const waveTimeMs = now - this.lastWaveStart;
+    recordWave(waveTimeMs);
     this.telemetry.track({
       type: 'wave_complete',
       wave: this.waves.currentWave - 1,
-      timeTakenMs: now - this.lastWaveStart,
+      timeTakenMs: waveTimeMs,
       deaths: this.waveDeaths,
       ts: Date.now(),
     });
